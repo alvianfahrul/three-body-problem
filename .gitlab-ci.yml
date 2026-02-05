@@ -1,0 +1,59 @@
+variables:
+  HARBOR_HOST: "192.168.56.202"
+  HARBOR_PROJECT: "my-project"
+  HARBOR_USER: "admin"
+  HARBOR_PASSWORD: "Harbor12345"
+
+stages:
+  - build
+  - push
+  - deploy
+
+build_job:
+  stage: build
+  tags:
+    - shell
+  script:
+    - docker compose build
+
+push_to_harbor:
+  stage: push
+  tags:
+    - shell
+  parallel:
+    matrix:
+      # Cukup masukkan nama image yang tertulis di file docker-compose.yml
+      - IMAGE_NAME: ["react-frontend", "go-api", "laravel-api"]
+  script:
+    - echo "$HARBOR_PASSWORD" | docker login $HARBOR_HOST -u "$HARBOR_USER" --password-stdin
+    
+    # 1. Tagging image
+    - docker tag ${IMAGE_NAME}:latest ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest
+    
+    # 2. Push ke Harbor
+    - docker push ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest
+    
+    # 3. Hapus image dari local runner (Cleanup)
+    - echo "Cleaning up local images for $IMAGE_NAME..."
+    - docker rmi ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest
+    - docker rmi ${IMAGE_NAME}:latest
+    
+    - docker logout $HARBOR_HOST
+
+deploy_job:
+  stage: deploy
+  tags:
+    - shell
+  script:
+    - echo "Logging in to Harbor..."
+    # Pastikan variabel HARBOR_USER dan HARBOR_PASSWORD sudah diatur di GitLab Variables
+    - echo "$HARBOR_PASSWORD" | docker login $HARBOR_HOST -u "$HARBOR_USER" --password-stdin
+    
+    - echo "Approval diterima. Memperbarui container..."
+    - docker compose down --remove-orphans
+    - docker compose pull  #
+    - docker compose up -d
+    
+    - echo "Logging out..."
+    - docker logout $HARBOR_HOST
+  when: manual
