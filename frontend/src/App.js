@@ -7,8 +7,8 @@ function App() {
   const [activeAPI, setActiveAPI] = useState('');
 
   // URL untuk Laravel API dan Go API
-  const LARAVEL_API = 'http://192.168.56.200:8001/api/products';
-  const GO_API = 'http://192.168.56.200:8080/api/products';
+  const LARAVEL_API = 'laravel/api/products';
+  const GO_API = 'go/api/products';
 
   // Function untuk fetch data dari Laravel API
   const fetchLaravelData = async () => {

@@ -1,0 +1,44 @@
+# 02-go-api.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-app
+  namespace: three-body-project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go
+  template:
+    metadata:
+      labels:
+        app: go
+    spec:
+      containers:
+      - name: go
+        image: alvianfahrul/go-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: DB_PASSWORD
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-service
+  namespace: three-body-project
+spec:
+  selector:
+    app: go
+  ports:
+  - port: 8080
+    targetPort: 8080

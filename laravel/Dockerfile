@@ -1,6 +1,6 @@
 FROM php:8.3-cli
 
-# Install dependency sistem
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -11,28 +11,29 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     default-mysql-client \
     && docker-php-ext-install pdo pdo_mysql zip \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /app
 
-# Copy source code Laravel
+# Copy application files
 COPY . .
 
-# Install dependency PHP
-RUN composer install --no-interaction --prefer-dist
+# Install PHP dependencies (production optimized)
+RUN composer install \
+    --no-interaction \
+    --no-dev \
+    --prefer-dist \
+    --optimize-autoloader \
+    --classmap-authoritative
 
-# Setup env Laravel
-RUN cp .env.example .env
-
-# Generate app key
-RUN php artisan key:generate
-
-# Expose port Laravel
+# Expose Laravel port
 EXPOSE 8001
 
-# Jalankan migrate + seed + serve
-CMD php artisan migrate --seed && \
-    php artisan serve --host=0.0.0.0 --port=8001
+# Start application
+CMD php artisan migrate --force && \
+    exec php artisan serve --host=0.0.0.0 --port=8001

@@ -1,0 +1,45 @@
+# 01-laravel.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-app
+  namespace: three-body-project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: laravel
+  template:
+    metadata:
+      labels:
+        app: laravel
+    spec:
+      containers:
+      - name: laravel
+        image: alvianfahrul/laravel-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+        envFrom:
+        - secretRef:
+            name: db-secret
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-service
+  namespace: three-body-project
+spec:
+  selector:
+    app: laravel
+  ports:
+  - protocol: TCP
+    port: 8001
+    targetPort: 8001
